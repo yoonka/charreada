@@ -1,0 +1,9 @@
+{application, charreada,
+ [
+  {description, "Simple Erlang reverse proxy leveraging Cowboy"},
+  {vsn, "0.1.0"},
+  {applications, [kernel, stdlib, cowboy, ibrowse]},
+  {registered, [charreada_config]},
+  {mod, {charreada_app, []}}
+ ]
+}.
