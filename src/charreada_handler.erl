@@ -37,8 +37,10 @@ info({ibrowse_get_body, Pid}, Req, State) ->
     stream(cowboy_req:stream_body(Req), Req, Pid, State);
 info({ibrowse_async_headers, RequestId, Code, HeadersOrg}, Req, {Timeout, undefined}) ->
     {Headers, Length} = process_headers(HeadersOrg, [], 0),
-    {ok, Transport, Socket} = cowboy_req:transport(Req),
-    Fun = fun() -> stream_reply({RequestId, Transport, Socket, Length}, Length) end,
+    Fun =
+        fun(Socket, Transport) ->
+                stream_reply({RequestId, Transport, Socket, Length}, Length)
+        end,
     {ok, ReplyReq} = cowboy_req:reply(list_to_integer(Code), Headers, {Length, Fun}, Req),
     {loop, ReplyReq, {Timeout, Length}};
 info({ibrowse_async_response, _RequestId, []}, Req, State) ->

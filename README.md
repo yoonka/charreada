@@ -1,4 +1,5 @@
 charreada
 =========
 
-Simple Erlang reverse proxy leveraging Cowboy
+Simple Erlang reverse proxy leveraging Cowboy and iBrowse.
+
