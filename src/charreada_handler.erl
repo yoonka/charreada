@@ -5,7 +5,7 @@
 -export([onrequest/2]).
 -export([init/3]).
 -export([info/3]).
--export([terminate/2]).
+-export([terminate/3]).
 
 onrequest(Req, Timeout) ->
     proxy_host(cowboy_req:header(<<"host">>, Req), Timeout).
@@ -52,7 +52,7 @@ info({cowboy_req, resp_sent}, Req, State) ->
 info({error, _Reason}, Req, State) ->
     reply(502, Req, State).
 
-terminate(_Req, _State) ->
+terminate(_Reason, _Req, _State) ->
     ok.
 
 post_body(Pid) ->
