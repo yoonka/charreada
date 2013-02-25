@@ -1,3 +1,4 @@
+%% -*- mode: erlang -*-
 {application, charreada,
  [
   {description, "Simple Erlang reverse proxy leveraging Cowboy"},
