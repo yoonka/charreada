@@ -45,6 +45,8 @@ info({ibrowse_async_headers, RequestId, Code, HeadersOrg}, Req, {Timeout, undefi
     {loop, ReplyReq, {Timeout, Length}};
 info({ibrowse_async_response, _RequestId, []}, Req, State) ->
     {loop, Req, State};
+info({ibrowse_async_response, _RequestId, {error, _}}, Req, State) ->
+    {ok, Req, State};
 info({ibrowse_async_response_end, _RequestId}, Req, State) ->
     {ok, Req, State};
 info({cowboy_req, resp_sent}, Req, State) ->
