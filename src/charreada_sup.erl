@@ -20,6 +20,8 @@ start_link() ->
 %% Supervisor callbacks
 
 init([]) ->
-    Tid = ets:new(?MODULE, [public, {read_concurrency, true}]),    
-    Procs = [?WORKER(charreada_config, Tid)],
+    %% The supervisor owns the tables
+    TProxy = ets:new(charreada_proxy, [public, {read_concurrency, true}]),
+    TLogin = ets:new(charreada_login, [public, {read_concurrency, true}]),
+    Procs = [?WORKER(charreada_config, {TProxy, TLogin})],
     {ok, {{one_for_one, 5, 15}, Procs}}.
