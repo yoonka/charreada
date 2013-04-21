@@ -85,7 +85,7 @@ get_config(C, Host) ->
     get_subdomain(C, binary:split(Host, <<".">>)).
 
 get_subdomain(C, [Subdomain | _T]) ->
-    get_user(C, binary:split(Subdomain, <<"~">>));
+    get_user(C, binary:split(Subdomain, <<"-">>));
 get_subdomain(_C, []) ->
     undefined.
 
@@ -153,8 +153,9 @@ to_atom(<<"MOVE">>) -> move;
 to_atom(<<"COPY">>) -> copy.
 
 to_ibrowse_options(Pid, undefined) ->
-    to_ibrowse_options(Pid, []);
-to_ibrowse_options(Pid, {_, User, Password}) ->
-    to_ibrowse_options(Pid, [{basic_auth, {to_string(User), to_string(Password)}}]);
-to_ibrowse_options(Pid, List) ->
+    add_ibrowse_option(Pid, []);
+to_ibrowse_options(Pid, {User, Password}) ->
+    add_ibrowse_option(Pid, [{basic_auth, {to_string(User), to_string(Password)}}]).
+
+add_ibrowse_option(Pid, List) ->
     [{stream_to, {Pid, once}}|List].
