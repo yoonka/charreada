@@ -3,7 +3,9 @@
 
 %% API
 -export([start_link/1]).
--export([add_proxy/4, remove_proxy/1, add_login/2, remove_login/1, redirect_req/6]).
+-export([add_proxy/4, remove_proxy/1,
+         add_login/2, add_login/3, is_login/2, remove_login/1,
+         redirect_req/6]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -31,6 +33,14 @@ remove_proxy(Id) ->
 add_login(User, Password) ->
     gen_server:call(?SERVER, {add_login, User, Password}).
 
+-spec add_login(binary(), binary(), binary()) -> ok.
+add_login(Id, User, Password) ->
+    gen_server:call(?SERVER, {add_login, Id, User, Password}).
+
+-spec is_login(binary(), binary()) -> boolean().
+is_login(Id, User) ->
+    gen_server:call(?SERVER, {is_login, Id, User}).
+
 -spec remove_login(binary()) -> ok.
 remove_login(User) ->
     gen_server:call(?SERVER, {remove_login, User}).
@@ -51,13 +61,19 @@ handle_call({add_proxy, Id, Method, Host, Port}, _From, C) ->
     true = ets:insert(C#config.proxy_tid, {to_lower_binary(Id), Method, Host, Port}),
     {reply, ok, C};
 handle_call({remove_proxy, Id}, _From, C) ->
-    true = ets:delete(C#config.proxy_tid, normalize_key(Id)),
+    true = ets:delete(C#config.proxy_tid, to_lower_binary(Id)),
     {reply, ok, C};
 handle_call({add_login, User, Password}, _From, C) ->
-    true = ets:insert(C#config.login_tid, {User, Password}),
+    Ids = ets:select(C#config.proxy_tid, [{{'$1', '_', '_', '_'}, [], ['$1']}]),
+    [ insert_login(C, Id, User, Password) || Id <- Ids ],
     {reply, ok, C};
+handle_call({add_login, Id, User, Password}, _From, C) ->
+    insert_login(C, Id, User, Password),
+    {reply, ok, C};
+handle_call({is_login, Id, User}, _From, C) ->
+    {reply, ets:member(C#config.login_tid, {to_lower_binary(Id), User}), C};
 handle_call({remove_login, User}, _From, C) ->
-    true = ets:delete(C#config.login_tid, User),
+    true = ets:match_delete(C#config.login_tid, {{'_', User}, '_'}),
     {reply, ok, C};
 handle_call({redirect, Pid, Method, Host, Path, Headers, BodyFun, Timeout}, _From, C) ->
     Config = get_config(C, Host),
@@ -78,8 +94,8 @@ code_change(_OldVsn, State, _Extra) ->
 
 %%% Internal methods
 
-normalize_key(Name) ->
-    to_lower_binary(Name).
+insert_login(C, Id, User, Password) ->
+    true = ets:insert(C#config.login_tid, {{to_lower_binary(Id), User}, Password}).
 
 get_config(C, Host) ->
     get_subdomain(C, binary:split(Host, <<".">>)).
@@ -89,16 +105,17 @@ get_subdomain(C, [Subdomain | _T]) ->
 get_subdomain(_C, []) ->
     undefined.
 
-get_user(C, [Proxy]) ->
-    verify(read_proxy(C, Proxy), undefined);
-get_user(C, [Proxy, User]) ->
-    verify(read_proxy(C, Proxy), read_login(C, User)).
+get_user(C, [Id]) ->
+    verify(read_proxy(C, to_lower_binary(Id)), undefined);
+get_user(C, [Id, User]) ->
+    NId = to_lower_binary(Id),
+    verify(read_proxy(C, NId), read_login(C, NId, User)).
 
-read_proxy(C, Proxy) ->
-    ets:lookup(C#config.proxy_tid, to_lower_binary(Proxy)).
+read_proxy(C, Id) ->
+    ets:lookup(C#config.proxy_tid, Id).
 
-read_login(C, User) ->
-    ets:lookup(C#config.login_tid, User).
+read_login(C, Id, User) ->
+    ets:lookup(C#config.login_tid, {Id, User}).
 
 verify([], _) -> undefined;
 verify(_, []) -> undefined;
@@ -154,7 +171,7 @@ to_atom(<<"COPY">>) -> copy.
 
 to_ibrowse_options(Pid, undefined) ->
     add_ibrowse_option(Pid, []);
-to_ibrowse_options(Pid, {User, Password}) ->
+to_ibrowse_options(Pid, {{_, User}, Password}) ->
     add_ibrowse_option(Pid, [{basic_auth, {to_string(User), to_string(Password)}}]).
 
 add_ibrowse_option(Pid, List) ->
