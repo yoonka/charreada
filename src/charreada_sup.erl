@@ -23,5 +23,6 @@ init([]) ->
     %% The supervisor owns the tables
     TProxy = ets:new(charreada_proxy, [public, {read_concurrency, true}]),
     TLogin = ets:new(charreada_login, [public, {read_concurrency, true}]),
-    Procs = [?WORKER(charreada_config, {TProxy, TLogin})],
+    TAllow = ets:new(charreada_allow, [public, {read_concurrency, true}]),
+    Procs = [?WORKER(charreada_config, {TProxy, TLogin, TAllow})],
     {ok, {{one_for_one, 5, 15}, Procs}}.
