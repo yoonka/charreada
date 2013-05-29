@@ -21,7 +21,7 @@ proxy_host({Host, Req}, Timeout) ->
     NoConnHeaders = lists:keydelete(<<"connection">>, 1, NoHostHeaders),
     {Cookies, CookiesReq} = cowboy_req:cookies(Req),
     BodyFun = {fun post_body/1, self()},
-    Resp = charreada_config:redirect_req(
+    Resp = charreada_config:redirect_request(
              Method, Host, Path, NoConnHeaders, Cookies, BodyFun, Timeout),
     handle_redirect(Resp, CookiesReq, Timeout).
 
