@@ -143,9 +143,9 @@ insert_allow(C, Exists, Options, Key, Cookie, Value) ->
     {ok, to_subdomain(Exists, Options, Key)}.
 
 to_subdomain(false, [{user, optional}], {ProxyNo, _UserNo}) ->
-    << (omc:to_binary(ProxyNo))/binary >>;
+    << (yolf:to_binary(ProxyNo))/binary >>;
 to_subdomain(true, _Options, {ProxyNo, UserNo}) ->
-    << (omc:to_binary(ProxyNo))/binary, <<"-">>/binary, (omc:to_binary(UserNo))/binary >>.
+    << (yolf:to_binary(ProxyNo))/binary, <<"-">>/binary, (yolf:to_binary(UserNo))/binary >>.
 
 get_config(C, Host, Cookies) ->
     case parse_subdomain(binary:split(Host, <<".">>)) of
