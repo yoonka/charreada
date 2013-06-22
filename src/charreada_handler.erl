@@ -39,14 +39,17 @@ proxy_host({undefined, Req}, _Timeout) ->
     ReplyReq;
 proxy_host({Host, Req}, Timeout) ->
     {Method, Req} = cowboy_req:method(Req),
-    {Path, Req} = cowboy_req:path(Req),
+    {HostUrl, Req} = cowboy_req:host_url(Req),
+    {Url, Req} = cowboy_req:url(Req),
+    UrlLen = byte_size(Url),
+    PathUrl = binary:part(Url, {UrlLen, -(UrlLen - byte_size(HostUrl))}),
     {OrgHeaders, Req} = cowboy_req:headers(Req),
     NoHostHeaders = lists:keydelete(<<"host">>, 1, OrgHeaders),
     NoConnHeaders = lists:keydelete(<<"connection">>, 1, NoHostHeaders),
     {Cookies, CookiesReq} = cowboy_req:cookies(Req),
     BodyFun = {fun post_body/1, self()},
     Resp = charreada_config:redirect_request(
-             Method, Host, Path, NoConnHeaders, Cookies, BodyFun, Timeout),
+             Method, Host, PathUrl, NoConnHeaders, Cookies, BodyFun, Timeout),
     handle_redirect(Resp, CookiesReq, Timeout).
 
 handle_redirect(ok, Req, Timeout) ->
